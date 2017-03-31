@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="renderer" content="webkit">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0,
+                                 maximum-scale=1.0">
+  <title>手势密码</title>
+
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+  <header>
+    <h1 class="title">手势密码</h1>
+  </header>
+
+  <canvas class="pattern-lock" width="300" height="300">
+    Canvas not surpported
+  </canvas>
+
+  <p class="prompt">请输入手势密码</p>
+  <div class="controls">
+    <label class="control">
+      <input type="radio" name="operation" value="set" checked>
+      <span>设置密码</span>
+    </label>
+    <label class="control">
+      <input type="radio" name="operation" value="validate">
+      <span>验证密码</span>
+    </label>
+  </div>
+
+  <script
+    src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+    integrity="sha256-k2WSCIexGzOj3Euiig+TlR8gA0EmPjuc79OEeY5L45g="
+    crossorigin="anonymous"></script>
+  <script src="../pattern-lock.js"></script>
+  <script src="index.js"></script>
+</body>
+</html>

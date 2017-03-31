@@ -1,0 +1,22 @@
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #f2f2f2;
+  text-align: center;
+}
+
+header {
+  padding: 5px;
+  background-color: #fff;
+  border-bottom: 1px solid #ddd;
+  box-shadow: 0 2px 2px #ddd;
+}
+
+.title {
+  font-size: 20px;
+}
+
+.control {
+  display: block;
+  margin-bottom: 20px;
+}
