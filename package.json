@@ -7,6 +7,25 @@
     "pattern lock",
     "html"
   ],
+  "scripts": {
+    "dev": "node config/dev-server.js",
+    "build": "webpack --config config/webpack.prod.js"
+  },
+  "devDependencies": {
+    "babel-core": "^6.24.0",
+    "babel-loader": "^6.4.1",
+    "babel-preset-es2015": "^6.24.0",
+    "webpack": "^2.3.3",
+    "webpack-dev-server": "^2.4.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/guochen-whu/pattern-lock"
+  },
+  "bugs": {
+    "url": "https://github.com/guochen-whu/pattern-lock/issues"
+  },
+  "homepage": "https://github.com/guochen-whu/pattern-lock",
   "author": "Chen Guo",
   "license": "MIT"
 }

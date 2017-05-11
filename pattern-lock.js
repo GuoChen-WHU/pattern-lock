@@ -391,7 +391,8 @@
     return this;
   };
 
-  // 初始化拥有'pattern-lock'类的组件
-  Plugin.call($('.pattern-lock'));
+  $(function () {
+    Plugin.call($('.pattern-lock'));
+  });
 
 })(jQuery);
