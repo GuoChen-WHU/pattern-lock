@@ -6,28 +6,54 @@
 
   if (typeof $ === 'undefined') throw new Error('Pattern lock need jquery as a dependency.');
 
-  var PatternLock = function (canvas, options) {
-    this.$el = $(canvas);
-    this.canvas = canvas;
+  var PatternLock = function (container, options) {
+    this.$container = $(container);
+    this.$container.css('position', 'relative');
     this.options = options;
-    this.context = canvas.getContext('2d');
-    this.width = canvas.width;
-    this.height = canvas.height;
+    this.width = this.$container.width();
+    this.height = this.$container.height();
 
-    // 只有九个圆的初始绘图
-    this.originalDrawing = null;
+    // 绘制背景圆的canvas
+    let circleCanvas = document.createElement('canvas');
+    $.extend(circleCanvas.style, {
+      position: 'absolute',
+      top: 0,
+      left: 0
+    });
+    circleCanvas.width = this.width;
+    circleCanvas.height = this.height;
+    // 绘制点的canvas
+    let pointCanvas = circleCanvas.cloneNode(true);
+    // 绘制线的canvas，把它和pointCanvas分开使得圆和点可以覆盖在线上面
+    let lineCanvas = circleCanvas.cloneNode(true);
+    // 绘制橡皮筋的canvas
+    let elasticCanvas = circleCanvas.cloneNode(true);
+
+    this.$container.append(lineCanvas);
+    this.$container.append(elasticCanvas);
+    this.$container.append(circleCanvas);
+    this.$container.append(pointCanvas);
+
+    // 绘制背景圆
+    let circleCtx = circleCanvas.getContext('2d');
+    this.options.centers.forEach($.proxy(function (pos) {
+      this.drawCircle(circleCtx, pos[0], pos[1], this.options.circleRadius, 'stroke');
+    }), this);
+
+    this.pointCtx = pointCanvas.getContext('2d');
+    this.lineCtx = lineCanvas.getContext('2d');
+    this.elasticCtx = elasticCanvas.getContext('2d');
+
     // 当前选中的圆
     this.currentCircle = -1;
-    // 当前绘图
-    this.drawingSurface = null;
-    // 橡皮筋区域
-    this.rubberbandRect = {};
     // 存放滑过的圆索引，触摸结束时即手势结果
     this.result = [];
     // 初始状态下设置的密码
     this.initPassword = '';
 
-    this.init();
+    // 添加触摸和鼠标事件响应
+    this.$container.on('touchstart', $.proxy(this.onMouseDownOrTouchStart, this));
+    this.$container.on('mousedown', $.proxy(this.onMouseDownOrTouchStart, this));
   };
 
   PatternLock.DEFAULTS = {
@@ -37,7 +63,8 @@
     circleStrokeColor: '#888',
     circleFillColor: '#f00',
     lineWidth: 2,
-    radius: 0.07,
+    circleRadius: 0.07,
+    pointRadius: 0.05,
     centers: [
       [0.15, 0.15],
       [0.5,  0.15],
@@ -52,71 +79,45 @@
   };
 
   /**
-   * 初始化
-   */
-  PatternLock.prototype.init = function () {
-    this.options.centers.forEach($.proxy(function (pos) {
-      this.drawCircle(pos[0], pos[1], this.options.radius, 'stroke');
-    }), this);
-    // 保存初始绘图
-    this.originalDrawing = this.saveDrawing();
-    // 添加触摸和鼠标事件响应
-    this.$el.on('touchstart', $.proxy(this.onMouseDownOrTouchStart, this));
-    this.$el.on('mousedown', $.proxy(this.onMouseDownOrTouchStart, this));
-  };
-
-  /**
    * 绘制一个圆
-   * @param x {Number} 圆心x坐标
-   * @param y {Number} 圆心y坐标
-   * @param r {Number} 圆半径
-   * @param type {String} 描边或填充
-   * @param style {Object} 样式
+   * @param {Object} ctx 绘图上下文
+   * @param {Number} x 圆心x坐标
+   * @param {Number} y 圆心y坐标
+   * @param {Number} r 圆半径
+   * @param {String} type 描边或填充
+   * @param {Object} style 样式
    */
-  PatternLock.prototype.drawCircle = function (x, y, r, type, style) {
-    this.context = $.extend(this.context, {
+  PatternLock.prototype.drawCircle = function (ctx, x, y, r, type, style) {
+    ctx = $.extend(ctx, {
       strokeStyle: this.options.circleStrokeColor,
       lineWidth: this.options.lineWidth,
       fillStyle: this.options.circleFillColor
     }, style || {});
 
-    this.context.beginPath();
-    this.context.arc(this.width * x, this.height * y, this.width * r, 0, Math.PI * 2);
-    type === 'stroke' ? this.context.stroke() : this.context.fill();
+    ctx.beginPath();
+    ctx.arc(this.width * x, this.height * y, this.width * r, 0, Math.PI * 2);
+    type === 'stroke' ? ctx.stroke() : ctx.fill();
   };
 
   /**
    * 绘制一条线
-   * @param x1 {Number} 起点x坐标
-   * @param y1 {Number} 起点y坐标
-   * @param x2 {Number} 终点x坐标
-   * @param y2 {String} 终点y坐标
-   * @param style {Object} 样式
+   * @param {Object} ctx 绘图上下文
+   * @param {Number} x1 起点x坐标
+   * @param {Number} y1 起点y坐标
+   * @param {Number} x2 终点x坐标
+   * @param {String} y2 终点y坐标
+   * @param {Object} style 样式
    */
-  PatternLock.prototype.drawLine = function (x1, y1, x2, y2, style) {
-    this.context = $.extend(this.context, {
+  PatternLock.prototype.drawLine = function (ctx, x1, y1, x2, y2, style) {
+    ctx = $.extend(ctx, {
       strokeStyle: this.options.lineColor,
       lineWidth: this.options.lineWidth
     }, style || {});
 
-    this.context.beginPath();
-    this.context.moveTo(x1, y1);
-    this.context.lineTo(x2, y2);
-    this.context.stroke();
-  };
-
-  /**
-   * 保存当前绘图
-   */
-  PatternLock.prototype.saveDrawing = function () {
-    return this.context.getImageData(0, 0, this.width, this.height);
-  };
-
-  /**
-   * 恢复到指定绘图
-   */
-  PatternLock.prototype.restoreDrawing = function (drawing) {
-    drawing && this.context.putImageData(drawing, 0, 0);
+    ctx.beginPath();
+    ctx.moveTo(x1 * this.width, y1 * this.height);
+    ctx.lineTo(x2 * this.width, y2 * this.height);
+    ctx.stroke();
   };
 
   /**
@@ -133,10 +134,10 @@
    * 页面坐标转换为canvas坐标
    */
   PatternLock.prototype.windowToCanvas = function (x, y) {
-    var bbox = this.canvas.getBoundingClientRect();
+    var bbox = this.$container[0].getBoundingClientRect();
     return {
-      x: x - bbox.left * (this.canvas.width / bbox.width),
-      y: y - bbox.top * (this.canvas.height / bbox.height)
+      x: x - bbox.left * (this.width / bbox.width),
+      y: y - bbox.top * (this.height / bbox.height)
     };
   };
 
@@ -156,7 +157,7 @@
   PatternLock.prototype.getTargetCircle = function (pos) {
     // TODO:改用效率更高的搜索算法
     var centers = this.options.centers,
-        radius = this.options.radius;
+        radius = this.options.circleRadius;
     for (var i = 0; i < 9; i++) {
       if (pos.x < centers[i][0] + radius &&
           pos.x > centers[i][0] - radius &&
@@ -167,40 +168,18 @@
   };
 
   /**
-   * 更新橡皮筋区域
-   */
-  PatternLock.prototype.updateRubberbandRect = function (pos) {
-    var centers = this.options.centers,
-        startX = centers[this.currentCircle][0],
-        startY = centers[this.currentCircle][1];
-    this.rubberbandRect.width = Math.abs(pos.x - startX);
-    this.rubberbandRect.height = Math.abs(pos.y - startY);
-
-    if (pos.x > startX) this.rubberbandRect.left = startX;
-    else this.rubberbandRect.left = pos.x;
-    if (pos.y > startY) this.rubberbandRect.top = startY;
-    else this.rubberbandRect.top = pos.y;
-  };
-
-  /**
-   * 绘制橡皮筋
-   */
-  PatternLock.prototype.drawRubberband = function (pos) {
-    var centers = this.options.centers;
-    this.drawLine(
-      centers[this.currentCircle][0] * this.width,
-      centers[this.currentCircle][1] * this.height,
-      pos.x * this.width,
-      pos.y * this.height
-    );
-  };
-
-  /**
    * 更新橡皮筋
    */
-  PatternLock.prototype.updateRubberband = function (pos) {
-    this.updateRubberbandRect(pos);
-    this.drawRubberband(pos);
+  PatternLock.prototype.updateElastic = function (pos) {
+    var centers = this.options.centers;
+    this.elasticCtx.clearRect(0, 0, this.width, this.height);
+    this.drawLine(
+      this.elasticCtx,
+      centers[this.currentCircle][0],
+      centers[this.currentCircle][1],
+      pos.x,
+      pos.y
+    );
   };
 
   /**
@@ -213,21 +192,20 @@
         pos = this.getStdPos(this.windowToCanvas(coor.x, coor.y)),
         index = this.getTargetCircle(pos),
         centers = this.options.centers,
-        radius = this.options.radius;
+        radius = this.options.pointRadius;
 
     // 如果选中了圆，记录该圆的索引，改变它的背景色，监听触摸滑动和触摸结束事件，
     // 保存当前绘图
     if (index !== void 0) {
       this.currentCircle = index;
       this.result.push(index);
-      this.drawCircle(centers[index][0], centers[index][1], radius, 'fill');
-      this.drawingSurface = this.saveDrawing();
+      this.drawCircle(this.pointCtx, centers[index][0], centers[index][1], radius, 'fill');
 
       // 开始监听触摸移动和触摸结束事件
-      this.$el.on('touchmove', $.proxy(this.onMouseMoveOrTouchMove, this));
-      this.$el.on('touchend', $.proxy(this.onMouseUpOrTouchEnd, this));
-      this.$el.on('mousemove', $.proxy(this.onMouseMoveOrTouchMove, this));
-      this.$el.on('mouseup', $.proxy(this.onMouseUpOrTouchEnd, this));
+      this.$container.on('touchmove', $.proxy(this.onMouseMoveOrTouchMove, this));
+      this.$container.on('touchend', $.proxy(this.onMouseUpOrTouchEnd, this));
+      this.$container.on('mousemove', $.proxy(this.onMouseMoveOrTouchMove, this));
+      this.$container.on('mouseup', $.proxy(this.onMouseUpOrTouchEnd, this));
     }
   };
 
@@ -241,45 +219,38 @@
         pos = this.getStdPos(this.windowToCanvas(coor.x, coor.y)),
         index = this.getTargetCircle(pos),
         centers = this.options.centers,
-        radius = this.options.radius;
+        radius = this.options.pointRadius;
 
     // 滑到了一个圆处，需要选中该圆，改变橡皮筋起点
     if (index !== void 0) {
       // 已经记录过的圆，直接返回
       if (this.result.indexOf(index) > -1) return;
-      // 橡皮筋弹到圆中心
-      this.restoreDrawing(this.drawingSurface);
-      pos.x = centers[index][0];
-      pos.y = centers[index][1];
-      this.updateRubberband(pos);
+      // 画线
+      this.drawLine(this.lineCtx, centers[this.currentCircle][0], centers[this.currentCircle][1], centers[index][0], centers[index][1]);
 
       // 该圆存入结果中
       this.result.push(index);
 
       // 高亮该圆
-      this.drawCircle(centers[index][0], centers[index][1], radius, 'fill');
+      this.drawCircle(this.pointCtx, centers[index][0], centers[index][1], radius, 'fill');
       // 改变橡皮筋起点
       this.currentCircle = index;
-      // 为下一轮的橡皮筋效果保存绘图
-      this.drawingSurface = this.saveDrawing();
+      // 清除橡皮筋
+      this.elasticCtx.clearRect(0, 0, this.width, this.height);
       return;
     }
-    this.restoreDrawing(this.drawingSurface);
-    this.updateRubberband(pos);
+    this.updateElastic(pos);
   };
 
   /**
    * 触摸结束响应函数
    */
   PatternLock.prototype.onMouseUpOrTouchEnd = function (e) {
-    // 去掉橡皮筋
-    this.restoreDrawing(this.drawingSurface);
-
     // 解绑事件
-    this.$el.off('touchmove');
-    this.$el.off('touchend');
-    this.$el.off('mousemove');
-    this.$el.off('mouseup');
+    this.$container.off('touchmove');
+    this.$container.off('touchend');
+    this.$container.off('mousemove');
+    this.$container.off('mouseup');
 
     var password = this.result.join('');
     // 设置模式，记录密码，进入'again'状态
@@ -287,12 +258,12 @@
       // 验证密码长度
       if (password.length < this.options.minLength) {
         var shortEvent = $.Event('short.gesturepassword');
-        this.$el.trigger(shortEvent);
+        this.$container.trigger(shortEvent);
       } else {
         this.initPassword = password;
         this.options.mode = 'again';
         var initEvent = $.Event('init.gesturepassword', {initPassword: this.initPassword});
-        this.$el.trigger(initEvent);
+        this.$container.trigger(initEvent);
       }
 
     // again状态，验证密码是否一致
@@ -300,11 +271,11 @@
       // 密码不一致
       if (this.initPassword !== password) {
         var diffEvent = $.Event('diff.gesturepassword', {diffPassword: password});
-        this.$el.trigger(diffEvent);
+        this.$container.trigger(diffEvent);
       // 密码一致，写入localStorage
       } else {
         var setEvent = $.Event('set.gesturepassword');
-        this.$el.trigger(setEvent);
+        this.$container.trigger(setEvent);
         localStorage.setItem('gesture-password', password);
       }
 
@@ -313,19 +284,21 @@
       var target = localStorage.getItem('gesture-password');
       if (password !== target) {
         var wrongEvent = $.Event('wrong.gesturepassword', {wrongPassword: password});
-        this.$el.trigger(wrongEvent);
+        this.$container.trigger(wrongEvent);
       } else {
         var correctEvent = $.Event('correct.gesturepassword');
-        this.$el.trigger(correctEvent);
+        this.$container.trigger(correctEvent);
       }
     }
 
     // 重置组件状态
     this.result = [];
-    this.drawingSurface = null;
+    // 去掉橡皮筋
+    this.elasticCtx.clearRect(0, 0, this.width, this.height);
     // 延迟半秒擦除密码
     setTimeout($.proxy(function () {
-      this.restoreDrawing(this.originalDrawing);
+      this.pointCtx.clearRect(0, 0, this.width, this.height);
+      this.lineCtx.clearRect(0, 0, this.width, this.height);
     }, this), 500);
   };
 
@@ -351,16 +324,16 @@
    * 使组件不可用
    */
   PatternLock.prototype.disable = function () {
-    this.$el.off('mousedown');
-    this.$el.off('touchstart');
+    this.$container.off('mousedown');
+    this.$container.off('touchstart');
   };
 
   /**
    * 使组件可用
    */
   PatternLock.prototype.enable = function () {
-    this.$el.on('mousedown', $.proxy(this.onMouseDownOrTouchStart, this));
-    this.$el.on('touchstart', $.proxy(this.onMouseDownOrTouchStart, this));
+    this.$container.on('mousedown', $.proxy(this.onMouseDownOrTouchStart, this));
+    this.$container.on('touchstart', $.proxy(this.onMouseDownOrTouchStart, this));
   };
 
 

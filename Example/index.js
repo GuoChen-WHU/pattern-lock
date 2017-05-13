@@ -4,8 +4,8 @@
   var $controls = $('.controls');
   $controls.on('click', '[type="radio"]', function (e) {
     e.target.value === 'set' ?
-      $('canvas').patternLock('set') :
-      $('canvas').patternLock('validate');
+      $('.pattern-lock').patternLock('set') :
+      $('.pattern-lock').patternLock('validate');
     $prompt.text(prompts.start);
   });
 
@@ -32,7 +32,7 @@
     .on('diff.gesturepassword', function (e) {
       $prompt.html(prompts.setDifferent);
       setTimeout(function () {$prompt.text(prompts.start);}, 1000);
-      $('canvas').patternLock('set');
+      $('.pattern-lock').patternLock('set');
     })
     .on('set.gesturepassword', function (e) {
       $prompt.html(prompts.setSuccess);
