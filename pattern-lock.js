@@ -50,6 +50,8 @@
     this.result = [];
     // 初始状态下设置的密码
     this.initPassword = '';
+    // 用于validate的正确密码
+    this.password = this.options.correctPassword;
 
     // 添加触摸和鼠标事件响应
     this.$container.on('touchstart', $.proxy(this.onMouseDownOrTouchStart, this));
@@ -257,12 +259,12 @@
     if (this.options.mode === 'set') {
       // 验证密码长度
       if (password.length < this.options.minLength) {
-        var shortEvent = $.Event('short.gesturepassword');
+        var shortEvent = $.Event('short.gesturepassword', {shortPassword: password});
         this.$container.trigger(shortEvent);
       } else {
         this.initPassword = password;
         this.options.mode = 'again';
-        var initEvent = $.Event('init.gesturepassword', {initPassword: this.initPassword});
+        var initEvent = $.Event('init.gesturepassword', {initPassword: password});
         this.$container.trigger(initEvent);
       }
 
@@ -272,17 +274,17 @@
       if (this.initPassword !== password) {
         var diffEvent = $.Event('diff.gesturepassword', {diffPassword: password});
         this.$container.trigger(diffEvent);
-      // 密码一致，写入localStorage
+      // 密码一致
       } else {
-        var setEvent = $.Event('set.gesturepassword');
+        var setEvent = $.Event('set.gesturepassword', {password: password});
         this.$container.trigger(setEvent);
-        localStorage.setItem('gesture-password', password);
+        this.password = password;
       }
 
     // validate状态
     } else if (this.options.mode === 'validate') {
-      var target = localStorage.getItem('gesture-password');
-      if (password !== target) {
+      if (!this.password) throw new Error('No password set');
+      if (password !== this.password) {
         var wrongEvent = $.Event('wrong.gesturepassword', {wrongPassword: password});
         this.$container.trigger(wrongEvent);
       } else {
