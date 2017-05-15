@@ -26,47 +26,47 @@ $('#lock').patternLock(options);
 
 As in bootstrap, options can be passed via data attributes or JavaScript.
 
-### `mode`
+#### `mode`
 
 Values: `set`(default) or `validate`
 
 Whether the component is waiting for user to set a password or to validate.
 
-### `correctPassword`
+#### `correctPassword`
 
 Only useful when `mode` is set to `validate`, it determines the password to compare with.
 
-### `minLength`
+#### `minLength`
 
 Values: An interger between 0-9
 
 The minimum length of a valid password.
 
-### `lineWidth`
+#### `lineWidth`
 
 Values: An Interger.
 
 Width of the track line.
 
-### `lineColor`
+#### `lineColor`
 
 Values: A css style color string
 
 Color of the track line.
 
-### `defaultCircleColor`
+#### `defaultCircleColor`
 
 Values: A css style color string
 
 The stroke color of the circle by default.
 
-### `activatedCircleColor`
+#### `activatedCircleColor`
 
 Values: A css style color string
 
 The stroke color of the circle when activated.
 
-### `pointColor`
+#### `pointColor`
 
 Values: A css style color string
 
@@ -74,19 +74,19 @@ The fill color of the circle when activated.
 
 ## Methods
 
-`.patternLock('set')`
+#### `.patternLock('set')`
 
 Set the component mode to 'set'.
 
-`.patternLock('validate')`
+#### `.patternLock('validate')`
 
 Set the component mode to 'validate'.
 
-`.patternLock('disable')`
+#### `.patternLock('disable')`
 
 Disable the component temporarily.
 
-`.patternLock('enable')`
+#### `.patternLock('enable')`
 
 Enable the component again.
 
@@ -129,6 +129,16 @@ $(document).on('wrong.patternLock', function (e) {
 
 ## Example
 
-See Example folder.
+#### general example
+
+https://guochen-whu.github.io/pattern-lock/example/general/
+
+#### set password
+
+https://guochen-whu.github.io/pattern-lock/example/set/
+
+#### validate password
+
+https://guochen-whu.github.io/pattern-lock/example/validate/
 
 
