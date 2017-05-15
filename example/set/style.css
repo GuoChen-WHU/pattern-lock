@@ -1,0 +1,9 @@
+body {
+  text-align: center;
+}
+
+.pattern-lock {
+  width: 300px;
+  height: 300px;
+  margin: 0 auto;
+}

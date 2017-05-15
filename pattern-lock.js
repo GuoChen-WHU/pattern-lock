@@ -259,36 +259,37 @@
     if (this.options.mode === 'set') {
       // 验证密码长度
       if (password.length < this.options.minLength) {
-        var shortEvent = $.Event('short.gesturepassword', {shortPassword: password});
+        var shortEvent = $.Event('short.patternlock', {shortPassword: password});
         this.$container.trigger(shortEvent);
       } else {
         this.initPassword = password;
-        this.options.mode = 'again';
-        var initEvent = $.Event('init.gesturepassword', {initPassword: password});
+        var initEvent = $.Event('init.patternlock', {initPassword: password});
         this.$container.trigger(initEvent);
+        this.options.mode = 'again';
       }
 
     // again状态，验证密码是否一致
     } else if (this.options.mode === 'again') {
       // 密码不一致
       if (this.initPassword !== password) {
-        var diffEvent = $.Event('diff.gesturepassword', {diffPassword: password});
+        var diffEvent = $.Event('diff.patternlock', {diffPassword: password});
         this.$container.trigger(diffEvent);
       // 密码一致
       } else {
-        var setEvent = $.Event('set.gesturepassword', {password: password});
+        var setEvent = $.Event('set.patternlock', {password: password});
         this.$container.trigger(setEvent);
         this.password = password;
       }
+      this.options.mode = 'set';
 
     // validate状态
     } else if (this.options.mode === 'validate') {
       if (!this.password) throw new Error('No password set');
       if (password !== this.password) {
-        var wrongEvent = $.Event('wrong.gesturepassword', {wrongPassword: password});
+        var wrongEvent = $.Event('wrong.patternlock', {wrongPassword: password});
         this.$container.trigger(wrongEvent);
       } else {
-        var correctEvent = $.Event('correct.gesturepassword');
+        var correctEvent = $.Event('correct.patternlock');
         this.$container.trigger(correctEvent);
       }
     }
