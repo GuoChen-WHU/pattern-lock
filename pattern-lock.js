@@ -8,17 +8,19 @@
 
   var PatternLock = function (container, options) {
     this.$container = $(container);
-    this.$container.css('position', 'relative');
+    this.$container.css('position') === 'static' && this.$container.css('position', 'relative');
     this.options = options;
-    this.width = this.$container.width();
-    this.height = this.$container.height();
+    // 放大两倍再缩小一半，以支持redina屏的清晰显示
+    this.width = this.$container.width() * 2;
+    this.height = this.$container.height() * 2;
 
     // 绘制背景圆的canvas
     let circleCanvas = document.createElement('canvas');
     $.extend(circleCanvas.style, {
       position: 'absolute',
-      top: 0,
-      left: 0
+      top: '-50%',
+      left: '-50%',
+      transform: 'scale(0.5)'
     });
     circleCanvas.width = this.width;
     circleCanvas.height = this.height;
@@ -61,10 +63,11 @@
   PatternLock.DEFAULTS = {
     mode: 'set',
     minLength: 5,
-    lineColor: '#888',
-    circleStrokeColor: '#888',
-    circleFillColor: '#f00',
-    lineWidth: 2,
+    lineColor: '#8ac7fd',
+    lineWidth: 5,
+    defaultCircleColor: '#aaa',
+    activatedCircleColor: '#38a6fd',
+    pointColor: '#38a6fd',
     circleRadius: 0.07,
     pointRadius: 0.05,
     centers: [
@@ -91,14 +94,38 @@
    */
   PatternLock.prototype.drawCircle = function (ctx, x, y, r, type, style) {
     ctx = $.extend(ctx, {
-      strokeStyle: this.options.circleStrokeColor,
-      lineWidth: this.options.lineWidth,
-      fillStyle: this.options.circleFillColor
+      strokeStyle: this.options.defaultCircleColor
     }, style || {});
 
     ctx.beginPath();
     ctx.arc(this.width * x, this.height * y, this.width * r, 0, Math.PI * 2);
     type === 'stroke' ? ctx.stroke() : ctx.fill();
+  };
+
+  /**
+   * 高亮选中的圆
+   */
+  PatternLock.prototype.activateCircle = function (index) {
+    this.drawCircle(
+      this.pointCtx, 
+      this.options.centers[index][0],
+      this.options.centers[index][1],
+      this.options.pointRadius,
+      'fill',
+      {
+        fillStyle: this.options.pointColor
+      }
+    );
+    this.drawCircle(
+      this.pointCtx, 
+      this.options.centers[index][0],
+      this.options.centers[index][1],
+      this.options.circleRadius,
+      'stroke',
+      {
+        strokeStyle: this.options.activatedCircleColor
+      }
+    );
   };
 
   /**
@@ -138,8 +165,8 @@
   PatternLock.prototype.windowToCanvas = function (x, y) {
     var bbox = this.$container[0].getBoundingClientRect();
     return {
-      x: x - bbox.left * (this.width / bbox.width),
-      y: y - bbox.top * (this.height / bbox.height)
+      x: x - bbox.left,
+      y: y - bbox.top
     };
   };
 
@@ -148,8 +175,8 @@
    */
   PatternLock.prototype.getStdPos = function (pos) {
     return {
-      x: pos.x / this.width,
-      y: pos.y / this.height
+      x: pos.x * 2 / this.width,
+      y: pos.y * 2 / this.height
     };
   };
 
@@ -196,12 +223,12 @@
         centers = this.options.centers,
         radius = this.options.pointRadius;
 
-    // 如果选中了圆，记录该圆的索引，改变它的背景色，监听触摸滑动和触摸结束事件，
+    // 如果选中了圆，记录该圆的索引，改变它的样式，监听触摸滑动和触摸结束事件，
     // 保存当前绘图
     if (index !== void 0) {
       this.currentCircle = index;
       this.result.push(index);
-      this.drawCircle(this.pointCtx, centers[index][0], centers[index][1], radius, 'fill');
+      this.activateCircle(index);
 
       // 开始监听触摸移动和触摸结束事件
       this.$container.on('touchmove', $.proxy(this.onMouseMoveOrTouchMove, this));
@@ -234,7 +261,7 @@
       this.result.push(index);
 
       // 高亮该圆
-      this.drawCircle(this.pointCtx, centers[index][0], centers[index][1], radius, 'fill');
+      this.activateCircle(index);
       // 改变橡皮筋起点
       this.currentCircle = index;
       // 清除橡皮筋

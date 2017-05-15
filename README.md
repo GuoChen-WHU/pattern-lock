@@ -10,16 +10,16 @@ Include jquery and pattern-lock.js in your html.
 
 ### Via data attributes
 
-Insert a `<canvas>` element in your html with `class="pattern-lock"` and other options `data-*=""`.
+Set `class="pattern-lock"` on a container element, along with options like `data-mode="validate"`, `data-min-length=5`.
 
 ```HTML
-<canvas class="pattern-lock" data-mode="validate"></canvas>
+<div class="pattern-lock" data-mode="validate" data-min-length=5></div>
 ```
 
 ### Via Javascript
 
 ``` javascript
-$('canvas').patternLock(options);
+$('#lock').patternLock(options);
 ```
 
 ## Options
@@ -29,39 +29,48 @@ As in bootstrap, options can be passed via data attributes or JavaScript.
 ### `mode`
 
 Values: `set`(default) or `validate`
-Data-attribute: `data-mode`
 
 Whether the component is waiting for user to set a password or to validate.
+
+### `correctPassword`
+
+Only useful when `mode` is set to `validate`, it determines the password to compare with.
 
 ### `minLength`
 
 Values: An interger between 0-9
 
-Determine the minimum length of a valid password.
-
-### `circleStrokeColor`
-
-Values: A css style color string
-
-Determine the stroke color of the circle.
-
-### `circleFillColor`
-
-Values: A css style color string
-
-Determine the fill color of the circle.
+The minimum length of a valid password.
 
 ### `lineWidth`
 
 Values: An Interger.
 
-Determine the width of line and circle stroke.
+Width of the track line.
 
 ### `lineColor`
 
 Values: A css style color string
 
-Determine the track line color.
+Color of the track line.
+
+### `defaultCircleColor`
+
+Values: A css style color string
+
+The stroke color of the circle by default.
+
+### `activatedCircleColor`
+
+Values: A css style color string
+
+The stroke color of the circle when activated.
+
+### `pointColor`
+
+Values: A css style color string
+
+The fill color of the circle when activated.
 
 ## Methods
 
