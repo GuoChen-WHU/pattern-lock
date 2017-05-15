@@ -53,7 +53,7 @@
     // 初始状态下设置的密码
     this.initPassword = '';
     // 用于validate的正确密码
-    this.password = this.options.correctPassword;
+    this.password = String(this.options.correctPassword);
 
     // 添加触摸和鼠标事件响应
     this.$container.on('touchstart', $.proxy(this.onMouseDownOrTouchStart, this));
